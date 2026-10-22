@@ -14,7 +14,6 @@ export interface Constructor {
 }
 
 export interface DriverStanding {
-  position?: string;
   positionText: string;
   points: string;
   wins: string;
@@ -23,31 +22,22 @@ export interface DriverStanding {
 }
 
 export interface ConstructorStanding {
-  position?: string;
   positionText: string;
   points: string;
   wins: string;
   Constructor: Constructor;
 }
 
-export interface Circuit {
-  circuitId: string;
-  circuitName: string;
-  Location: { locality: string; country: string };
-}
-
 export interface Result {
-  number: string;
   position: string;
   positionText: string;
   points: string;
   grid: string;
-  laps: string;
   status: string;
   Driver: Driver;
   Constructor: Constructor;
   Time?: { time: string };
-  FastestLap?: { rank: string; lap: string; Time: { time: string } };
+  FastestLap?: { rank: string; Time: { time: string } };
 }
 
 export interface Race {
@@ -56,8 +46,27 @@ export interface Race {
   raceName: string;
   date: string;
   time?: string;
-  Circuit: Circuit;
+  Circuit: {
+    circuitId: string;
+    circuitName: string;
+    Location: { locality: string; country: string };
+  };
   Results?: Result[];
   SprintResults?: Result[];
   Sprint?: { date: string; time?: string };
+}
+
+/** Pontos acumulados por etapa, já prontos para o gráfico. */
+export interface Progression {
+  rows: Array<{ round: string; race: string } & Record<string, number | string>>;
+  drivers: Array<{ id: string; code: string; color: string; dashed: boolean }>;
+}
+
+export interface SeasonData {
+  season: string;
+  drivers: DriverStanding[];
+  constructors: ConstructorStanding[];
+  schedule: Race[];
+  lastRace?: Race;
+  progression: Progression;
 }

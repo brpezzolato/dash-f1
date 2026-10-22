@@ -1,0 +1,118 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "Barlow", ui-sans-serif, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --color-teal: var(--teal);
+  --color-teal-deep: var(--teal-deep);
+  --color-teal-ink: var(--teal-ink);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Paleta inspirada no visual Petronas: cards escuros sobre fundo verde-água. */
+:root {
+  --radius: 0.25rem;
+  --teal: #00d2be;
+  --teal-deep: #00a19b;
+  --teal-ink: #04312d;
+  --paper: #eef1f0;
+  --paper-ink: #111416;
+  --background: #0b0d0e;
+  --foreground: oklch(0.97 0 0);
+  --card: #0f1213;
+  --card-foreground: oklch(0.97 0 0);
+  --popover: #15191a;
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: var(--teal);
+  --primary-foreground: #041a18;
+  --secondary: #1b2022;
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: #1b2022;
+  --muted-foreground: #8e9a9b;
+  --accent: #1b2022;
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: #ff5a5f;
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: var(--teal);
+  --chart-1: var(--teal);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  /* Sobrenome com brilho metálico, como no título da referência. */
+  .text-chrome {
+    background: linear-gradient(180deg, #ffffff 0%, #c9d1d3 45%, #6f7a7d 55%, #e9eef0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .halftone {
+    background-image: radial-gradient(rgb(0 0 0 / 0.13) 1px, transparent 1.2px);
+    background-size: 5px 5px;
+  }
+  .clip-corner {
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+  }
+}
+
+/* Listras de velocidade usadas nos cards “fotográficos”. */
+@keyframes streak {
+  from { transform: translateX(-30%); }
+  to { transform: translateX(30%); }
+}
+.speed-streaks {
+  background: repeating-linear-gradient(90deg, transparent 0 40px, rgb(255 255 255 / 0.08) 40px 120px, transparent 120px 220px);
+  animation: streak 0.9s linear infinite alternate;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speed-streaks, .animate-marquee { animation: none; }
+}
