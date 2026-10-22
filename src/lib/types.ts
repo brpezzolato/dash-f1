@@ -7,6 +7,7 @@ export interface Driver {
   givenName: string;
   familyName: string;
   nationality: string;
+  dateOfBirth?: string;
 }
 
 export interface Constructor {
@@ -221,4 +222,28 @@ export interface LapDistribution {
 export interface PointsSeries {
   rows: Array<{ round: string; race: string } & Record<string, number | string>>;
   drivers: Array<{ id: string; code: string; color: string; dashed: boolean }>;
+}
+
+/** Números de um piloto na temporada, calculados a partir dos resultados. */
+export interface DriverSeasonStats {
+  races: number;
+  points: number;
+  sprintPoints: number;
+  wins: number;
+  podiums: number;
+  poles: number;
+  top10: number;
+  dnfs: number;
+  fastestLaps: number;
+  bestFinish?: number;
+  avgFinish?: number;
+  avgGrid?: number;
+  positionsGained: number;
+  pointsPerRace: number;
+  /** Participação nos pontos da própria equipe (0–1). */
+  teamShare: number;
+  gapToLeader: number;
+  age?: number;
+  /** Posição de chegada por etapa (null = abandono/ausente). */
+  form: Array<{ round: string; position: number | null }>;
 }

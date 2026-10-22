@@ -1,20 +1,17 @@
 # Dash F1 🏁
 
-Dashboard de **ciência de dados da Fórmula 1** em visual escuro de vidro fosco. Cada equipe tem a sua cor, usada em todos os gráficos.
+Dashboard de **ciência de dados da Fórmula 1** em uma **página única**, com visual escuro e tecnológico. Cada equipe tem a sua cor, usada em todos os gráficos.
 
-- **Tela inicial (`/`)**, no layout de "app de corrida":
-  - Vídeo da corrida no hero, com o nome do GP e o status ao vivo/final
-  - Leaderboard com gap, pneu final e voltas nele, melhor volta e bandeira, com busca por piloto ou equipe
-  - Painel **Overview**: o traçado se desenha na entrada e os carros circulam pela pista com os gaps reais da corrida; extensão, umidade e card do vencedor na cor da equipe, com efeito de inclinação
-- **Dashboard (`/dashboard`)**
-  - Última corrida, com leaderboard (gap, pneus usados, melhor volta, posições ganhas)
-  - Visão do circuito: mapa com curvas numeradas, extensão, voltas, temperatura do ar e da pista, umidade, vento e chuva
-  - Card do vencedor na cor da equipe
-  - **Estratégia de pneus:** stints por piloto
-  - **Ritmo de corrida:** box plot das voltas limpas
-  - Evolução do campeonato, classificação de pilotos e construtores, legenda de cores das equipes e calendário
+1. **Abertura:** o loading passa por todos os pilotos do grid, com as fotos em sequência sobre os traçados das pistas da temporada.
+2. **Hero em tela cheia:** vídeo de corrida servido pelo próprio site, leaderboard (gap, pneu final, melhor volta, bandeira, busca) e painel Overview. No painel, os carros circulam pela pista com os gaps reais. Ao rolar, o hero encolhe e vira um card.
+3. **A temporada em uma frase:** texto que se revela palavra por palavra com a rolagem.
+4. **Pilotos:** carrossel arrastável com autoplay (Embla, base do Carousel do shadcn).
+5. **Ranking:** foto do piloto no lugar do número. Ao passar o mouse, ou tocar no celular, a linha cresce e mostra todos os números da temporada: pódios, poles, médias, posições ganhas, % dos pontos da equipe e resultado por etapa.
+6. **Análise da corrida:** pista e clima, estratégia de pneus e ritmo em box plot.
+7. **Campeonato:** evolução de pontos, construtores e cores das equipes.
+8. **Calendário:** trilho horizontal fixado, que desliza conforme a rolagem.
 
-Seletor de temporada de 2000 até hoje, via `?season=AAAA`. Pneus, voltas e clima existem a partir de 2023.
+O seletor de temporada vai de 2000 até hoje, via `?season=AAAA`. Pneus, voltas e clima existem a partir de 2023.
 
 ## Fontes de dados
 
@@ -32,21 +29,28 @@ Se alguma fonte cair, só a parte que depende dela mostra "indisponível". O res
 
 ## Animações
 
-Feitas com [Motion](https://motion.dev):
-- Transição entre páginas (`src/app/template.tsx`)
-- Barra de progresso no topo durante a navegação
-- Loading com as cinco luzes de largada
-- Entrada escalonada de cards e linhas, números que contam até o valor e revelação ao rolar a página
+Feitas com [Motion](https://motion.dev) e [Lenis](https://lenis.darkroom.engineering):
+- Rolagem suave com inércia
+- Hero que encolhe ao rolar e texto revelado pela rolagem
+- Calendário com scroll horizontal fixado
+- Carrossel, linhas que expandem, números que contam até o valor e barra de progresso ao trocar de temporada
 
 Tudo respeita a preferência do sistema por movimento reduzido.
 
-## Vídeos
+## Vídeo
 
-O hero da tela inicial usa o player embutido do YouTube com vídeos do canal oficial da F1, mudo e em loop. Os IDs ficam em `src/lib/videos.ts`. Também podem ser trocados por `NEXT_PUBLIC_HERO_VIDEOS`, ou por um MP4 próprio em `NEXT_PUBLIC_HERO_VIDEO_MP4`.
+O vídeo do hero **não depende do YouTube nem de CDN externa no navegador**. O script `scripts/fetch-media.mjs` roda antes do `next build`:
+1. Baixa o vídeo do Wikimedia Commons.
+2. Gera um MP4 H.264 e um pôster com o `ffmpeg-static`.
+3. Salva tudo em `public/media/`.
+
+Assim o arquivo é servido pelo próprio domínio do site. As fotos dos pilotos também passam pelo otimizador de imagens do Next, no mesmo domínio.
+
+Vídeo: [“2021 Russian Grand Prix – start for warm-up”](https://commons.wikimedia.org/wiki/File:2021_Russian_Grand_Prix_-_start_for_warm-up.webm), por rubin16, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Para trocar, defina `HERO_VIDEO_SOURCE` com a URL de outro WebM.
 
 ## Stack
 
-Next.js 15 (App Router, Server Components) · shadcn/ui · Tailwind CSS v4 · Motion · Recharts · Titillium Web + Inter.
+Next.js 15 (App Router, Server Components) · shadcn/ui · Tailwind CSS v4 · Motion · Lenis · Embla · Recharts · Titillium Web + Inter.
 
 ## Como rodar
 

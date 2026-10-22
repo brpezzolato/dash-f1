@@ -2,6 +2,7 @@ import "server-only";
 
 import { CIRCUITS } from "./circuits";
 import { flagFor } from "./flags";
+import { seasonStats } from "./stats";
 import { optional } from "./http";
 import * as jolpica from "./sources/jolpica";
 import * as mv from "./sources/multiviewer";
@@ -9,6 +10,8 @@ import * as openf1 from "./sources/openf1";
 import { teamColor, teamInfo } from "./teams";
 import type {
   CircuitInfo,
+  DriverSeasonStats,
+  TrackMap,
   ConstructorStanding,
   Constructor,
   Driver,
@@ -199,6 +202,9 @@ export interface RaceAnalysis {
 export interface Dashboard extends SeasonOverview {
   points: PointsSeries;
   lastRace?: RaceAnalysis;
+  stats: Record<string, DriverSeasonStats>;
+  /** Traçados de várias etapas, usados na animação de carregamento. */
+  tracks: Array<{ name: string; map: TrackMap }>;
 }
 
 async function openF1Context(season: string) {
@@ -355,11 +361,22 @@ export async function getDashboard(season: string): Promise<Dashboard> {
     jolpica.allResults(season, "results"),
     optional(jolpica.allResults(season, "sprint")),
   ]);
+  const { ctx, ...rest } = overview;
+  const [lastRace, tracks] = await Promise.all([last ? raceAnalysis(last, ctx) : undefined, loaderTracks(overview.schedule, ctx)]);
   return {
-    ...overview,
+    ...rest,
     points: pointsSeries(results, sprints ?? [], overview.drivers),
-    lastRace: last ? await raceAnalysis(last, overview.ctx) : undefined,
+    lastRace,
+    stats: seasonStats(results, sprints ?? [], overview.drivers),
+    tracks,
   };
+}
+
+/** Até 8 traçados do calendário, para o loading alternar entre pistas. */
+async function loaderTracks(schedule: Race[], ctx: Awaited<ReturnType<typeof openF1Context>>) {
+  const picks = schedule.filter((_, i) => i % Math.max(1, Math.ceil(schedule.length / 8)) === 0).slice(0, 8);
+  const infos = await Promise.all(picks.map((r) => optional(circuitInfo(r, ctx.meetings))));
+  return infos.flatMap((c) => (c?.map ? [{ name: c.name, map: c.map }] : []));
 }
 
 /** Dados da tela inicial: visão da temporada + análise da última corrida. */
