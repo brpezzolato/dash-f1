@@ -8,10 +8,12 @@ import { Leaderboard } from "@/components/dashboard/leaderboard";
 import { Panel, Unavailable } from "@/components/dashboard/panel";
 import { PointsChart } from "@/components/dashboard/points-chart";
 import { RaceHero } from "@/components/dashboard/race-hero";
-import { Sidebar } from "@/components/dashboard/sidebar";
 import { DriverStandings, TeamLegend, TeamStandings } from "@/components/dashboard/standings-bars";
 import { TyreStrategy } from "@/components/dashboard/tyre-strategy";
+import { Reveal } from "@/components/motion/reveal";
 import { SeasonSelect } from "@/components/season-select";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { FIRST_TELEMETRY_SEASON, getDashboard, resolveSeason, seasons } from "@/lib/f1";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -29,12 +31,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,#1a0f12_0%,#07080a_45%),radial-gradient(ellipse_at_bottom_right,#0c1420_0%,transparent_50%)]">
-      <div className="mx-auto flex max-w-[1500px] gap-4 p-4">
-        <Sidebar season={season} />
-
+      <div className="mx-auto flex max-w-[1500px] gap-4 p-3 sm:p-4">
         <div className="min-w-0 flex-1 space-y-4">
           <header className="glass flex flex-wrap items-center justify-between gap-3 rounded-3xl px-5 py-3">
-            <div>
+            <Link
+              href={`/?season=${season}`}
+              className="grid size-9 place-items-center rounded-full bg-white/[0.06] transition hover:-translate-x-0.5 hover:bg-white/[0.12]"
+              aria-label="Voltar ao início"
+            >
+              <ArrowLeft className="size-4" />
+            </Link>
+            <div className="mr-auto">
               <p className="kicker">Temporada {season}</p>
               <p className="font-display text-lg font-bold">
                 {d.completedRounds} de {d.schedule.length} etapas
@@ -50,7 +57,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
           {race ? (
             <>
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <Reveal className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
                 <div className="min-w-0 space-y-4">
                   <RaceHero analysis={race} />
                   <Panel title="Leaderboard" kicker={`Resultado final · ${race.leaderboard[0]?.laps ?? "–"} voltas`}>
@@ -71,9 +78,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     />
                   )}
                 </div>
-              </div>
+              </Reveal>
 
-              <div className="grid gap-4 xl:grid-cols-2">
+              <Reveal className="grid gap-4 xl:grid-cols-2">
                 <Panel id="estrategia" title="Estratégia de pneus" kicker="Stints por piloto · ordem de chegada">
                   {race.strategy.length ? <TyreStrategy rows={race.strategy} /> : <Unavailable>{noTelemetry}</Unavailable>}
                 </Panel>
@@ -89,7 +96,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     <Unavailable>{noTelemetry}</Unavailable>
                   )}
                 </Panel>
-              </div>
+              </Reveal>
             </>
           ) : (
             <Panel>
@@ -97,7 +104,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Panel>
           )}
 
-          <div id="campeonato" className="grid scroll-mt-6 gap-4 xl:grid-cols-[1.3fr_1fr_1fr]">
+          <Reveal id="campeonato" className="grid scroll-mt-6 gap-4 xl:grid-cols-[1.3fr_1fr_1fr]">
             <Panel title="Evolução do campeonato" kicker="Pontos acumulados · top 6 · corridas + sprints">
               {d.points.rows.length ? <PointsChart series={d.points} /> : <Unavailable>Sem corridas ainda.</Unavailable>}
             </Panel>
@@ -107,15 +114,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <Panel title="Construtores" kicker="Classificação">
               <TeamStandings rows={d.teams} />
             </Panel>
-          </div>
+          </Reveal>
 
-          <Panel title="Equipes" kicker="Cores usadas nos gráficos">
-            <TeamLegend drivers={d.standings} />
-          </Panel>
+          <Reveal>
+            <Panel title="Equipes" kicker="Cores usadas nos gráficos">
+              <TeamLegend drivers={d.standings} />
+            </Panel>
+          </Reveal>
 
-          <Panel id="calendario" title="Calendário" kicker={`${d.schedule.length} etapas`}>
-            <CalendarStrip races={d.schedule} nextRound={d.nextRace?.round} />
-          </Panel>
+          <Reveal>
+            <Panel id="calendario" title="Calendário" kicker={`${d.schedule.length} etapas`}>
+              <CalendarStrip races={d.schedule} nextRound={d.nextRace?.round} />
+            </Panel>
+          </Reveal>
 
           <p className="text-muted-foreground pb-4 text-center text-xs">
             Dados: Jolpica F1 (resultados), OpenF1 (pneus, voltas, clima, pilotos) e MultiViewer (traçados). Projeto não oficial.

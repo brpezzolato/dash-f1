@@ -178,6 +178,8 @@ export interface DriverInfo {
   team: TeamInfo;
   headshot?: string;
   countryCode?: string;
+  /** Código ISO de 2 letras do país do piloto, para a bandeira. */
+  flag?: string;
 }
 
 export interface LeaderboardRow {
@@ -191,6 +193,12 @@ export interface LeaderboardRow {
   fastest: boolean;
   /** Compostos usados na corrida, na ordem. */
   tyres: string[];
+  /** Pneu com que terminou e quantas voltas ele tinha. */
+  finalTyre?: { compound: string; laps: number };
+  /** Distância para o líder em segundos (ou voltas inteiras, se retardatário). */
+  gapSeconds?: number;
+  lapsDown: number;
+  finished: boolean;
 }
 
 export interface StrategyRow {

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { CIRCUITS } from "./circuits";
+import { flagFor } from "./flags";
 import { optional } from "./http";
 import * as jolpica from "./sources/jolpica";
 import * as mv from "./sources/multiviewer";
@@ -60,6 +61,7 @@ function driverInfo(d: Driver, c: Constructor, of1: OF1ByCode): DriverInfo {
     team: teamInfo(c.constructorId, c.name, live?.team_colour),
     headshot: live?.headshot_url?.replace("1col", "3col"),
     countryCode: live?.country_code,
+    flag: flagFor(d.nationality),
   };
 }
 
@@ -100,6 +102,17 @@ async function circuitInfo(race: Race, meetings: OF1Meeting[][]): Promise<Circui
 }
 
 /* ------------------------------------------------------------- análises */
+
+/** "1:35:21.231" → segundos. */
+function parseDuration(text: string): number {
+  return text.split(":").reduce((acc, part) => acc * 60 + Number(part), 0);
+}
+
+/** "+3.611" ou "+1:02.345" → segundos. */
+function parseGap(text: string): number | undefined {
+  const v = parseDuration(text.replace("+", ""));
+  return Number.isFinite(v) ? v : undefined;
+}
 
 function summarizeWeather(rows: OF1Weather[]): WeatherSummary | undefined {
   if (!rows.length) return undefined;
@@ -177,6 +190,10 @@ export interface RaceAnalysis {
   distribution: LapDistribution[];
   /** Se os dados do OpenF1 (pneus, voltas, clima) estão disponíveis. */
   telemetry: boolean;
+  /** Há uma corrida acontecendo agora. */
+  live: boolean;
+  /** Tempo médio de volta do vencedor, em segundos. */
+  avgLap?: number;
 }
 
 export interface Dashboard extends SeasonOverview {
@@ -185,7 +202,8 @@ export interface Dashboard extends SeasonOverview {
 }
 
 async function openF1Context(season: string) {
-  if (Number(season) < FIRST_TELEMETRY_SEASON) return { drivers: new Map() as OF1ByCode, meetings: [] as OF1Meeting[][] };
+  if (Number(season) < FIRST_TELEMETRY_SEASON)
+    return { drivers: new Map() as OF1ByCode, meetings: [] as OF1Meeting[][], live: false, lastSession: undefined };
   const [sessions, current, previous] = await Promise.all([
     optional(openf1.raceSessions(season)),
     optional(openf1.meetings(season)),
@@ -193,9 +211,11 @@ async function openF1Context(season: string) {
   ]);
   const now = Date.now();
   const last = sessions?.filter((s) => new Date(s.date_end).getTime() < now).at(-1);
+  const live = Boolean(sessions?.some((s) => new Date(s.date_start).getTime() <= now && now <= new Date(s.date_end).getTime()));
   const drivers = last ? await optional(openf1.drivers(last.session_key)) : undefined;
   return {
     lastSession: last,
+    live,
     drivers: new Map((drivers ?? []).map((d) => [d.name_acronym, d])) as OF1ByCode,
     meetings: [current ?? [], previous ?? []],
   };
@@ -259,17 +279,31 @@ async function raceAnalysis(
   const stintsOf = (n?: number): OF1Stint[] =>
     (stintRows ?? []).filter((s) => s.driver_number === n).sort((a, b) => a.stint_number - b.stint_number);
 
-  const leaderboard: LeaderboardRow[] = results.map((r, i) => ({
-    position: r.positionText,
-    driver: infos[i],
-    grid: Number(r.grid),
-    laps: Number(r.laps),
-    gap: i === 0 ? (r.Time?.time ?? "—") : (r.Time?.time ?? r.status),
-    points: Number(r.points),
-    bestLap: r.FastestLap?.Time.time,
-    fastest: r.FastestLap?.rank === "1",
-    tyres: stintsOf(infos[i].number).map((s) => s.compound),
-  }));
+  const winnerLaps = Number(results[0]?.laps ?? 0);
+  const leaderboard: LeaderboardRow[] = results.map((r, i) => {
+    const stints = stintsOf(infos[i].number);
+    const lastStint = stints.at(-1);
+    const lapsDown = Math.max(0, winnerLaps - Number(r.laps));
+    const finished = /^(Finished|\+\d+ Laps?|Lapped)$/.test(r.status) || Boolean(r.Time);
+    return {
+      position: r.positionText,
+      driver: infos[i],
+      grid: Number(r.grid),
+      laps: Number(r.laps),
+      gap: i === 0 ? (r.Time?.time ?? "—") : (r.Time?.time ?? r.status),
+      gapSeconds: i === 0 ? 0 : r.Time ? parseGap(r.Time.time) : undefined,
+      lapsDown,
+      finished,
+      points: Number(r.points),
+      bestLap: r.FastestLap?.Time.time,
+      fastest: r.FastestLap?.rank === "1",
+      tyres: stints.map((s) => s.compound),
+      finalTyre: lastStint
+        ? { compound: lastStint.compound, laps: lastStint.lap_end - lastStint.lap_start + 1 + (lastStint.tyre_age_at_start ?? 0) }
+        : undefined,
+    };
+  });
+  const winnerTime = results[0]?.Time?.time ? parseDuration(results[0].Time.time) : undefined;
 
   const strategy: StrategyRow[] = results
     .map((r, i) => ({
@@ -309,6 +343,8 @@ async function raceAnalysis(
     strategy,
     distribution,
     telemetry: Boolean(stintRows?.length || lapRows?.length),
+    live: ctx.live,
+    avgLap: winnerTime && winnerLaps ? winnerTime / winnerLaps : undefined,
   };
 }
 
@@ -324,4 +360,11 @@ export async function getDashboard(season: string): Promise<Dashboard> {
     points: pointsSeries(results, sprints ?? [], overview.drivers),
     lastRace: last ? await raceAnalysis(last, overview.ctx) : undefined,
   };
+}
+
+/** Dados da tela inicial: visão da temporada + análise da última corrida. */
+export async function getHome(season: string): Promise<SeasonOverview & { lastRace?: RaceAnalysis }> {
+  const [overview, last] = await Promise.all([getOverview(season), jolpica.lastRace(season)]);
+  const { ctx, ...rest } = overview;
+  return { ...rest, lastRace: last ? await raceAnalysis(last, ctx) : undefined };
 }

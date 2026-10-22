@@ -16,7 +16,10 @@ export function SeasonSelect({ season, seasons }: { season: string; seasons: str
       {pending && <Loader2 className="text-muted-foreground size-4 animate-spin" />}
       <Select
         value={season}
-        onValueChange={(s) => startTransition(() => router.push(`${pathname}?season=${s}`, { scroll: false }))}
+        onValueChange={(s) => {
+          window.dispatchEvent(new Event("dash:navigate"));
+          startTransition(() => router.push(`${pathname}?season=${s}`, { scroll: false }));
+        }}
       >
         <SelectTrigger size="sm" className="w-24 rounded-full border-white/10 bg-white/5" aria-label="Temporada">
           <SelectValue />
