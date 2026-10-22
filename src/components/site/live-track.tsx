@@ -38,7 +38,15 @@ export function LiveTrack({ map, cars, className }: { map?: TrackMap; cars: Trac
     if (!path || !drawn) return;
     const length = path.getTotalLength();
     let frame = 0;
+    let visible = true;
     const start = performance.now();
+    // Pausa a animação quando o mapa sai da tela.
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      cancelAnimationFrame(frame);
+      if (visible && !reduce) frame = requestAnimationFrame(place);
+    });
+    io.observe(path.ownerSVGElement ?? path);
 
     const place = (now: number) => {
       const lap = reduce ? 0.15 : ((now - start) / LAP_MS) % 1;
@@ -49,10 +57,13 @@ export function LiveTrack({ map, cars, className }: { map?: TrackMap; cars: Trac
         const p = path.getPointAtLength(u * length);
         node.setAttribute("transform", `translate(${p.x} ${p.y})`);
       });
-      if (!reduce) frame = requestAnimationFrame(place);
+      if (!reduce && visible) frame = requestAnimationFrame(place);
     };
     frame = requestAnimationFrame(place);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(frame);
+    };
   }, [cars, drawn, reduce]);
 
   if (!map) {

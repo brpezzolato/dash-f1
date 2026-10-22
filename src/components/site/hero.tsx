@@ -1,17 +1,15 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
 import { useMemo, useRef, useState } from "react";
-import { motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
-import { CalendarDays, Droplets, Flag, Gauge, Ruler, Search, Thermometer } from "lucide-react";
+import { motion, useMotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from "motion/react";
+import { CalendarDays, Droplets, Flag, Gauge, Ruler, Thermometer } from "lucide-react";
 
 import { Headshot } from "@/components/headshot";
 import { CountUp } from "@/components/motion/count-up";
 import { SeasonSelect } from "@/components/season-select";
-import { compound } from "@/components/tyres";
-import { flagUrl } from "@/lib/flags";
 import type { CircuitInfo, DriverInfo, LeaderboardRow, WeatherSummary } from "@/lib/types";
 import { LiveTrack, type TrackCar } from "./live-track";
+import { RaceBoard } from "./race-board";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -29,14 +27,6 @@ export interface HeroData {
   weather?: WeatherSummary;
   focus?: { driver: DriverInfo; label: string };
 }
-
-const NAV = [
-  { href: "#corrida", label: "Corrida" },
-  { href: "#pilotos", label: "Pilotos" },
-  { href: "#ranking", label: "Ranking" },
-  { href: "#analise", label: "Análise" },
-  { href: "#calendario", label: "Calendário" },
-];
 
 /* ------------------------------------------------------------ fundo */
 
@@ -58,78 +48,11 @@ function VideoBackdrop() {
         <source src="/media/hero.webm" type="video/webm" />
         <source src="/media/hero.mp4" type="video/mp4" />
       </motion.video>
-      {/* Camadas “tech”: escurecimento, grade, scanlines e vinheta. */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#07080a]/95 via-[#07080a]/55 to-[#07080a]/30" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#07080a] via-transparent to-[#07080a]/60" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.04)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.04)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_80%)]" />
-      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgb(0_0_0/0.18)_0px,rgb(0_0_0/0.18)_1px,transparent_1px,transparent_3px)] opacity-40" />
+      {/* Camadas “tech”: escurecimento e grade estática (sem máscaras ou scanlines). */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#07080a]/95 via-[#07080a]/60 to-[#07080a]/35" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#07080a] via-transparent to-[#07080a]/70" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.03)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
     </div>
-  );
-}
-
-/* ------------------------------------------------------ leaderboard */
-
-function TyreCell({ row }: { row: LeaderboardRow }) {
-  if (!row.finalTyre) return <span className="text-white/35">—</span>;
-  const c = compound(row.finalTyre.compound);
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className="size-2 rounded-full" style={{ background: c.color, boxShadow: `0 0 8px ${c.color}` }} />
-      {c.short} ({row.finalTyre.laps})
-    </span>
-  );
-}
-
-function Leaderboard({ rows, query }: { rows: LeaderboardRow[]; query: string }) {
-  const q = query.toLowerCase();
-  const filtered = q ? rows.filter((r) => [r.driver.givenName, r.driver.familyName, r.driver.code, r.driver.team.name].some((v) => v.toLowerCase().includes(q))) : rows;
-
-  return (
-    <table className="w-full text-sm">
-      <thead className="sticky top-0 z-10 bg-[#0d0e11]/95 backdrop-blur">
-        <tr className="text-left font-mono text-[10px] tracking-[0.15em] text-white/40 uppercase">
-          <th className="py-2.5 pr-2 font-normal">Pos</th>
-          <th className="py-2.5 pr-2 font-normal">Piloto</th>
-          <th className="py-2.5 pr-2 font-normal">Gap/Tempo</th>
-          <th className="hidden py-2.5 pr-2 font-normal sm:table-cell">Pneu</th>
-          <th className="hidden py-2.5 pr-2 font-normal md:table-cell">Melhor volta</th>
-          <th className="py-2.5 text-right font-normal">País</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filtered.map((r, i) => (
-          <motion.tr
-            key={r.driver.id}
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: query ? 0 : 0.5 + i * 0.04, ease: EASE }}
-            className="group border-t border-white/[0.05] transition-colors hover:bg-white/[0.04]"
-          >
-            <td className="py-2.5 pr-2 font-mono text-white/70">P{r.position}</td>
-            <td className="py-2.5 pr-2">
-              <span className="flex items-center gap-2.5">
-                <span className="relative size-7 shrink-0 overflow-hidden rounded-full" style={{ background: r.driver.team.color }}>
-                  <Headshot driver={r.driver} size={56} className="size-full" />
-                </span>
-                <span className="h-4 w-0.5 rounded-full" style={{ background: r.driver.team.color }} />
-                <span className="truncate transition-transform duration-300 group-hover:translate-x-1">
-                  <span className="text-white/60">{r.driver.givenName} </span>
-                  <span className="font-semibold">{r.driver.familyName}</span>
-                </span>
-              </span>
-            </td>
-            <td className="py-2.5 pr-2 font-mono text-white/80">{r.gap}</td>
-            <td className="hidden py-2.5 pr-2 font-mono text-white/80 sm:table-cell">
-              <TyreCell row={r} />
-            </td>
-            <td className={`hidden py-2.5 pr-2 font-mono md:table-cell ${r.fastest ? "text-[#c77dff]" : "text-white/70"}`}>{r.bestLap ?? "—"}</td>
-            <td className="py-2.5 text-right">
-              {r.driver.flag ? <img src={flagUrl(r.driver.flag)} alt="" className="ml-auto h-3.5 w-5 rounded-[2px] object-cover" /> : <span className="text-white/35">—</span>}
-            </td>
-          </motion.tr>
-        ))}
-      </tbody>
-    </table>
   );
 }
 
@@ -163,7 +86,7 @@ function FocusCard({ driver, label }: { driver: DriverInfo; label: string }) {
     >
       <div className="flex items-start justify-between">
         <span className="font-display text-5xl leading-none font-black text-white">#{driver.number ?? driver.code}</span>
-        <span className="rounded-full border border-white/40 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{label}</span>
+        <span className="rounded-full border border-white/40 bg-black/20 px-3 py-1 text-xs font-medium text-white">{label}</span>
       </div>
       <div className="pointer-events-none absolute right-1/2 bottom-0 -z-10 h-[90%] translate-x-1/2">
         <Headshot driver={driver} size={360} className="h-full w-auto object-contain drop-shadow-[0_20px_30px_rgb(0_0_0/0.45)]" />
@@ -202,14 +125,16 @@ function Tile({ label, icon, value, decimals = 0, unit, delay }: { label: string
 /* ------------------------------------------------------------- hero */
 
 export function Hero({ data }: { data: HeroData }) {
-  const [query, setQuery] = useState("");
-  const ref = useRef<HTMLElement>(null);
+    const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   // Ao rolar, o hero encolhe e vira um card arredondado que se afasta.
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.86]);
-  const radius = useTransform(scrollYProgress, [0, 0.25], [0, 32]);
+  // Só transform/opacity (compostos na GPU). Os cantos arredondados entram por
+  // classe com uma transição única, em vez de animar border-radius a cada pixel.
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.88]);
   const dim = useTransform(scrollYProgress, [0, 1], [0, 0.6]);
-  const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const [rounded, setRounded] = useState(false);
+  useMotionValueEvent(scrollYProgress, "change", (v) => setRounded(v > 0.01));
 
   const cars: TrackCar[] = useMemo(() => {
     const lap = data.avgLap ?? 95;
@@ -223,54 +148,21 @@ export function Hero({ data }: { data: HeroData }) {
 
   return (
     <section ref={ref} id="corrida" className="relative lg:h-[100svh] lg:min-h-[760px]">
-      <motion.div style={{ scale, borderRadius: radius, y }} className="relative origin-top overflow-hidden lg:h-[100svh] lg:min-h-[760px]">
+      <motion.div style={{ scale, y }} className={`relative origin-top overflow-hidden transition-[border-radius] duration-500 will-change-transform lg:h-[100svh] lg:min-h-[760px] ${rounded ? "rounded-[32px]" : "rounded-none"}`}>
         <VideoBackdrop />
         <motion.div style={{ opacity: dim }} className="pointer-events-none absolute inset-0 z-20 bg-black" />
 
-        {/* navegação */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
-          className="relative z-10 mx-auto flex max-w-[1500px] items-center gap-4 px-4 pt-4 sm:px-6"
-        >
-          <div className="glass flex w-full items-center gap-4 rounded-full py-1.5 pr-1.5 pl-4">
-            <a href="#corrida" className="flex items-center gap-2" aria-label="Dash F1">
-              <svg viewBox="0 0 24 24" className="size-6" aria-hidden>
-                <path d="M3 5l7 7-7 7" fill="none" stroke="#ff6b2c" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12 5l7 7-7 7" fill="none" stroke="#ff6b2c" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
-              </svg>
-              <span className="font-display hidden text-sm font-bold tracking-[0.25em] sm:inline">DASH·F1</span>
-            </a>
-            <nav className="mx-auto hidden items-center gap-1 lg:flex">
-              {NAV.map((n) => (
-                <a key={n.href} href={n.href} className="rounded-full px-3.5 py-1.5 text-sm text-white/65 transition-colors hover:bg-white/10 hover:text-white">
-                  {n.label}
-                </a>
-              ))}
-            </nav>
-            <label className="relative ml-auto lg:ml-0">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-white/45" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar piloto ou equipe"
-                className="h-9 w-36 rounded-full bg-white/[0.06] pr-3 pl-8 text-xs ring-1 ring-white/[0.08] transition-[width,background] duration-300 outline-none placeholder:text-white/40 focus:w-52 focus:bg-white/[0.1] sm:w-48 sm:focus:w-60"
-              />
-            </label>
-            <SeasonSelect season={data.season} seasons={data.seasons} />
-          </div>
-        </motion.header>
 
-        <div className="relative z-10 mx-auto grid max-w-[1500px] gap-4 px-4 pt-6 pb-4 sm:px-6 lg:h-[calc(100%-68px)] lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="relative z-10 mx-auto grid max-w-[1500px] gap-4 px-4 pt-6 pb-4 sm:px-6 lg:h-full lg:grid-cols-[minmax(0,1fr)_400px] lg:pt-8">
           {/* coluna esquerda */}
           <div className="flex min-h-0 flex-col">
-            <motion.p
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
               className="flex flex-wrap items-center gap-2 font-mono text-[11px] tracking-[0.25em] text-white/55 uppercase"
             >
+              <SeasonSelect season={data.season} seasons={data.seasons} />
               <span className="text-f1">●</span> Última corrida <span className="text-white/25">{"//"}</span> R{data.round ?? "–"}
               {data.raceDate && (
                 <>
@@ -278,10 +170,10 @@ export function Hero({ data }: { data: HeroData }) {
                   {new Date(data.raceDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
                 </>
               )}
-            </motion.p>
+            </motion.div>
 
             <div className="mt-4 flex items-start gap-3">
-              <h1 className="font-display text-5xl leading-[0.92] font-semibold tracking-tight sm:text-7xl xl:text-8xl">
+              <h1 className="font-display text-5xl leading-[0.92] font-semibold tracking-tight sm:text-6xl xl:text-7xl">
                 {words.map((w, i) => (
                   <span key={i} className="inline-block overflow-hidden pr-[0.22em] align-bottom">
                     <motion.span
@@ -320,7 +212,7 @@ export function Hero({ data }: { data: HeroData }) {
               ]
                 .filter((c) => c.text)
                 .map(({ icon: Icon, text }) => (
-                  <span key={text} className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs text-white/80 ring-1 ring-white/10 backdrop-blur">
+                  <span key={text} className="inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-xs text-white/80 ring-1 ring-white/10">
                     <Icon className="size-3" /> {text}
                   </span>
                 ))}
@@ -331,22 +223,13 @@ export function Hero({ data }: { data: HeroData }) {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.45, ease: EASE }}
-              className="glass relative mt-8 flex max-h-[60vh] min-h-[260px] flex-col rounded-[24px] px-4 pt-3 pb-1 lg:mt-auto lg:max-h-[46%]"
+              className="glass relative mt-6 flex h-[70vh] min-h-[420px] flex-col rounded-[26px] p-4 lg:h-auto lg:min-h-0 lg:flex-1"
             >
-              <div className="flex items-center justify-between pb-1">
-                <p className="text-sm font-medium">
-                  Leaderboard
-                  <span className="ml-2 font-mono text-[11px] text-white/45">
-                    VOLTA {laps ?? "–"}/{data.totalLaps ?? laps ?? "–"}
-                  </span>
-                </p>
-                <a href="#ranking" className="font-mono text-[10px] tracking-widest text-white/45 uppercase hover:text-white">
-                  Campeonato ↓
-                </a>
-              </div>
-              <div data-lenis-prevent className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
-                {data.leaderboard.length ? <Leaderboard rows={data.leaderboard} query={query} /> : <p className="py-10 text-center text-sm text-white/50">Nenhuma corrida disputada ainda.</p>}
-              </div>
+              {data.leaderboard.length ? (
+                <RaceBoard rows={data.leaderboard} laps={laps} totalLaps={data.totalLaps} />
+              ) : (
+                <p className="py-10 text-center text-sm text-white/50">Nenhuma corrida disputada ainda.</p>
+              )}
             </motion.div>
           </div>
 

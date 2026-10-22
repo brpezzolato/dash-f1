@@ -4,11 +4,10 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform, type MotionValue } from "motion/react";
 
 function Word({ children, progress, range, accent }: { children: string; progress: MotionValue<number>; range: [number, number]; accent?: boolean }) {
+  // Só opacidade (composta na GPU); filtros por palavra travam a rolagem.
   const opacity = useTransform(progress, range, [0.12, 1]);
-  const blur = useTransform(progress, range, [6, 0]);
-  const filter = useTransform(blur, (b) => `blur(${b}px)`);
   return (
-    <motion.span style={{ opacity, filter }} className={`mr-[0.25em] inline-block ${accent ? "text-[#ff6b2c]" : ""}`}>
+    <motion.span style={{ opacity }} className={`mr-[0.25em] inline-block ${accent ? "text-[#ff6b2c]" : ""}`}>
       {children}
     </motion.span>
   );

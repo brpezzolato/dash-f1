@@ -7,7 +7,8 @@ import Lenis from "lenis";
 export function SmoothScroll() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const lenis = new Lenis({ duration: 1.15, anchors: { offset: -16 } });
+    // lerp baixo = rolagem suave mas responsiva; sem inércia exagerada.
+    const lenis = new Lenis({ lerp: 0.12, wheelMultiplier: 1, anchors: { offset: -16 } });
     let frame = 0;
     const raf = (time: number) => {
       lenis.raf(time);

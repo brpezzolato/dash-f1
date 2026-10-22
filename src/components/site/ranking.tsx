@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { Headshot } from "@/components/headshot";
@@ -65,7 +65,13 @@ function Details({ row }: { row: Row }) {
     ["Atrás do líder", s.gapToLeader ? `${s.gapToLeader} pts` : "Líder"],
   ];
   return (
-    <div className="grid gap-6 pt-4 pb-2 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 pt-4 pb-2 lg:grid-cols-[150px_1fr_300px]">
+      <div
+        className="relative hidden h-[180px] overflow-hidden rounded-2xl lg:block"
+        style={{ background: `linear-gradient(170deg, ${row.driver.team.color}, #0b0c0e 90%)` }}
+      >
+        <Headshot driver={row.driver} size={300} className="absolute bottom-0 left-1/2 h-full w-auto -translate-x-1/2 object-contain" />
+      </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {items.map(([k, v], i) => (
           <motion.div
@@ -87,41 +93,50 @@ function Details({ row }: { row: Row }) {
 
 export function Ranking({ rows }: { rows: Row[] }) {
   const [open, setOpen] = useState<string | null>(null);
+  const hover = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const max = rows[0]?.points || 1;
 
+  // Pequeno atraso no hover: passar o mouse rápido não abre/fecha várias linhas.
+  const intend = (id: string | null) => {
+    clearTimeout(hover.current);
+    hover.current = setTimeout(() => setOpen(id), id ? 140 : 220);
+  };
+
   return (
-    <div className="space-y-2" onMouseLeave={() => setOpen(null)}>
+    <div className="space-y-2" onMouseLeave={() => intend(null)}>
       {rows.map((r, i) => {
         const isOpen = open === r.driver.id;
         const c = r.driver.team.color;
         return (
           <motion.div
             key={r.driver.id}
-            layout
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
-            transition={{ layout: { duration: 0.45, ease: EASE }, opacity: { duration: 0.5, delay: Math.min(i * 0.03, 0.4) }, y: { duration: 0.5, delay: Math.min(i * 0.03, 0.4) } }}
-            onMouseEnter={() => setOpen(r.driver.id)}
+            transition={{ duration: 0.5, delay: Math.min(i * 0.03, 0.3), ease: EASE }}
+            onMouseEnter={() => intend(r.driver.id)}
             onClick={() => setOpen(isOpen ? null : r.driver.id)}
-            className="relative cursor-pointer overflow-hidden rounded-2xl ring-1 ring-white/[0.06] transition-colors"
-            style={{
-              background: isOpen ? `linear-gradient(100deg, ${c}33, rgb(255 255 255 / 0.03) 55%)` : "rgb(255 255 255 / 0.025)",
-              boxShadow: isOpen ? `inset 3px 0 0 ${c}` : undefined,
-            }}
+            className="relative cursor-pointer overflow-hidden rounded-2xl bg-white/[0.025] ring-1 ring-white/[0.06]"
           >
-            <motion.div layout="position" className="flex items-center gap-4 px-4 py-3">
+            {/* Fundo na cor da equipe (só opacidade, sem repintar o card). */}
+            <span
+              className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+              style={{ background: `linear-gradient(100deg, ${c}33, transparent 55%)`, opacity: isOpen ? 1 : 0 }}
+            />
+            {/* Barra reta na cor da equipe. */}
+            <span
+              className="pointer-events-none absolute top-3 bottom-3 left-0 w-[3px] transition-opacity duration-300"
+              style={{ background: c, opacity: isOpen ? 1 : 0 }}
+            />
+            <div className="relative flex items-center gap-4 px-4 py-3">
               <span className="w-6 font-mono text-xs text-white/40">{r.position.padStart(2, "0")}</span>
-              {/* Foto no lugar do número; cresce quando a linha abre. */}
-              <motion.span
-                layout
-                className="relative shrink-0 overflow-hidden rounded-full ring-2"
-                style={{ background: `linear-gradient(160deg, ${c}, ${c}44)`, ["--tw-ring-color" as string]: c }}
-                animate={{ width: isOpen ? 88 : 44, height: isOpen ? 88 : 44 }}
-                transition={{ duration: 0.45, ease: EASE }}
+              {/* Foto no lugar do número. */}
+              <span
+                className="relative size-11 shrink-0 overflow-hidden rounded-full ring-2 transition-transform duration-300"
+                style={{ background: `linear-gradient(160deg, ${c}, ${c}44)`, ["--tw-ring-color" as string]: c, transform: isOpen ? "scale(1.08)" : undefined }}
               >
-                <Headshot driver={r.driver} size={176} className="size-full" />
-              </motion.span>
+                <Headshot driver={r.driver} size={88} className="size-full" />
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate">
                   <span className="text-white/60">{r.driver.givenName} </span>
@@ -136,20 +151,20 @@ export function Ranking({ rows }: { rows: Row[] }) {
                 </p>
               </div>
               <div className="hidden w-48 sm:block">
-                <div className="h-1.5 rounded-full bg-white/[0.06]">
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                   <motion.div
-                    className="h-full rounded-full"
-                    style={{ background: c, boxShadow: `0 0 12px ${c}` }}
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${(r.points / max) * 100}%` }}
+                    className="h-full origin-left rounded-full"
+                    style={{ background: c, width: `${(r.points / max) * 100}%` }}
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 1.1, ease: EASE, delay: 0.2 }}
+                    transition={{ duration: 1, ease: EASE, delay: 0.2 }}
                   />
                 </div>
               </div>
               <span className="hidden w-14 text-right font-mono text-sm text-white/55 md:block">{r.wins}V</span>
               <span className="font-display w-16 text-right text-2xl font-bold tabular-nums">{r.points}</span>
-            </motion.div>
+            </div>
             <AnimatePresence initial={false}>
               {isOpen && (
                 <motion.div
@@ -157,10 +172,12 @@ export function Ranking({ rows }: { rows: Row[] }) {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.45, ease: EASE }}
-                  className="px-4 pb-3"
+                  transition={{ duration: 0.4, ease: EASE }}
+                  className="relative overflow-hidden px-4"
                 >
-                  <Details row={r} />
+                  <div className="pb-3">
+                    <Details row={r} />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
