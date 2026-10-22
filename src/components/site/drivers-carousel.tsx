@@ -43,7 +43,7 @@ export function DriversCarousel({ items }: { items: Item[] }) {
             return (
               <div key={it.driver.id} className="min-w-0 shrink-0 grow-0 basis-[78%] pl-4 sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                 <article
-                  className={`group relative isolate h-[420px] overflow-hidden rounded-3xl ring-1 transition-all duration-500 ${active ? "ring-white/30" : "ring-white/10"}`}
+                  className={`group relative isolate h-[420px] overflow-hidden rounded-3xl ring-1 transition-[box-shadow] duration-500 ${active ? "ring-white/30" : "ring-white/10"}`}
                   style={{ background: `linear-gradient(170deg, ${c} 0%, ${c}cc 38%, #0b0c0e 100%)` }}
                 >
                   <div className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.06)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.06)_1px,transparent_1px)] bg-[size:32px_32px] opacity-40" />

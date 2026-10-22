@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { motion, useMotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from "motion/react";
+import { useEffect, useMemo, useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { CalendarDays, Droplets, Flag, Gauge, Ruler, Thermometer } from "lucide-react";
 
 import { Headshot } from "@/components/headshot";
@@ -31,9 +31,20 @@ export interface HeroData {
 /* ------------------------------------------------------------ fundo */
 
 function VideoBackdrop() {
+  const video = useRef<HTMLVideoElement>(null);
+  // Pausa o vídeo fora da tela: libera a decodificação enquanto se rola o resto do site.
+  useEffect(() => {
+    const el = video.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => (e.isIntersecting ? el.play().catch(() => {}) : el.pause()), { threshold: 0.05 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden bg-[radial-gradient(ellipse_at_70%_20%,#2a1210,#07080a_60%)]">
       <motion.video
+        ref={video}
         className="absolute inset-0 size-full object-cover"
         autoPlay
         muted
@@ -125,16 +136,8 @@ function Tile({ label, icon, value, decimals = 0, unit, delay }: { label: string
 /* ------------------------------------------------------------- hero */
 
 export function Hero({ data }: { data: HeroData }) {
-    const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  // Ao rolar, o hero encolhe e vira um card arredondado que se afasta.
-  // Só transform/opacity (compostos na GPU). Os cantos arredondados entram por
-  // classe com uma transição única, em vez de animar border-radius a cada pixel.
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.88]);
-  const dim = useTransform(scrollYProgress, [0, 1], [0, 0.6]);
-  const y = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const [rounded, setRounded] = useState(false);
-  useMotionValueEvent(scrollYProgress, "change", (v) => setRounded(v > 0.01));
+  // O encolhimento ao rolar é uma animação CSS guiada pela rolagem
+  // (animation-timeline), executada pelo navegador fora da thread do JS.
 
   const cars: TrackCar[] = useMemo(() => {
     const lap = data.avgLap ?? 95;
@@ -147,10 +150,10 @@ export function Hero({ data }: { data: HeroData }) {
   const laps = data.leaderboard[0]?.laps;
 
   return (
-    <section ref={ref} id="corrida" className="relative lg:h-[100svh] lg:min-h-[760px]">
-      <motion.div style={{ scale, y }} className={`relative origin-top overflow-hidden transition-[border-radius] duration-500 will-change-transform lg:h-[100svh] lg:min-h-[760px] ${rounded ? "rounded-[32px]" : "rounded-none"}`}>
+    <section id="corrida" className="hero-timeline relative lg:h-[100svh] lg:min-h-[760px]">
+      <div className="hero-shrink relative origin-top overflow-hidden lg:h-[100svh] lg:min-h-[760px]">
         <VideoBackdrop />
-        <motion.div style={{ opacity: dim }} className="pointer-events-none absolute inset-0 z-20 bg-black" />
+        <div className="hero-dim pointer-events-none absolute inset-0 z-20 bg-black opacity-0" />
 
 
         <div className="relative z-10 mx-auto grid max-w-[1500px] gap-4 px-4 pt-6 pb-4 sm:px-6 lg:h-full lg:grid-cols-[minmax(0,1fr)_400px] lg:pt-8">
@@ -257,7 +260,7 @@ export function Hero({ data }: { data: HeroData }) {
           </motion.aside>
         </div>
 
-      </motion.div>
+      </div>
     </section>
   );
 }

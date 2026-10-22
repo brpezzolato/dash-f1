@@ -36,7 +36,15 @@ export function LiveTrack({ map, cars, className }: { map?: TrackMap; cars: Trac
   useEffect(() => {
     const path = pathRef.current;
     if (!path || !drawn) return;
+    // Tabela de pontos pré-calculada: getPointAtLength por carro a cada quadro é caro.
+    const SAMPLES = 1200;
     const length = path.getTotalLength();
+    const lut = new Float32Array(SAMPLES * 2);
+    for (let k = 0; k < SAMPLES; k++) {
+      const p = path.getPointAtLength((k / SAMPLES) * length);
+      lut[k * 2] = p.x;
+      lut[k * 2 + 1] = p.y;
+    }
     let frame = 0;
     let visible = true;
     const start = performance.now();
@@ -54,8 +62,8 @@ export function LiveTrack({ map, cars, className }: { map?: TrackMap; cars: Trac
         const node = dotRefs.current[i];
         if (!node) return;
         const u = (((lap - car.behind) % 1) + 1) % 1;
-        const p = path.getPointAtLength(u * length);
-        node.setAttribute("transform", `translate(${p.x} ${p.y})`);
+        const k = Math.floor(u * SAMPLES) % SAMPLES;
+        node.setAttribute("transform", `translate(${lut[k * 2]} ${lut[k * 2 + 1]})`);
       });
       if (!reduce && visible) frame = requestAnimationFrame(place);
     };
@@ -111,7 +119,7 @@ export function LiveTrack({ map, cars, className }: { map?: TrackMap; cars: Trac
           >
             <circle r="24" fill={car.color} stroke="#16171a" strokeWidth="6" />
             {i === 0 && (
-              <text y="-36" textAnchor="middle" fontSize="30" fontWeight="700" fill="#fff" fontFamily="Titillium Web, sans-serif">
+              <text y="-36" textAnchor="middle" fontSize="30" fontWeight="700" fill="#fff" style={{ fontFamily: "var(--font-geist-mono)" }}>
                 {car.code}
               </text>
             )}

@@ -35,7 +35,8 @@ export function Block({ id, className, children }: { id?: string; className?: st
     <section
       id={id}
       className={cn(
-        "relative scroll-mt-4 rounded-[32px] bg-[#111215] p-5 shadow-[0_30px_80px_-40px_rgb(0_0_0/0.8)] ring-1 ring-white/[0.06] sm:p-8 lg:p-10",
+        // content-visibility: o navegador pula layout/pintura do que está fora da tela.
+        "relative scroll-mt-4 rounded-[32px] bg-[#111215] p-5 ring-1 ring-white/[0.06] [contain-intrinsic-size:auto_900px] [content-visibility:auto] sm:p-8 lg:p-10",
         className,
       )}
     >

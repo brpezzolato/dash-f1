@@ -31,11 +31,14 @@ Se alguma fonte cair, só a parte que depende dela mostra "indisponível". O res
 
 Feitas com [Motion](https://motion.dev) e [Lenis](https://lenis.darkroom.engineering):
 - Rolagem suave com inércia
-- Hero que encolhe ao rolar e texto revelado pela rolagem
+- Hero que encolhe ao rolar e texto revelado pela rolagem, feitos com **animações CSS guiadas pela rolagem** (`animation-timeline`), que rodam no navegador sem JavaScript a cada quadro
 - Calendário com scroll horizontal fixado
 - Carrossel, linhas que expandem, números que contam até o valor e barra de progresso ao trocar de temporada
 
-Tudo respeita a preferência do sistema por movimento reduzido.
+Tudo respeita a preferência do sistema por movimento reduzido. Para manter a fluidez:
+- sem `backdrop-filter` sobre o vídeo;
+- vídeo e traçado animado pausam fora da tela;
+- seções abaixo da dobra usam `content-visibility: auto`.
 
 ## Vídeo
 
@@ -50,7 +53,7 @@ Vídeo: [“2021 Russian Grand Prix – start for warm-up”](https://commons.wi
 
 ## Stack
 
-Next.js 15 (App Router, Server Components) · shadcn/ui · Tailwind CSS v4 · Motion · Lenis · Embla · Recharts · Titillium Web + Inter.
+Next.js 15 (App Router, Server Components) · shadcn/ui · Tailwind CSS v4 · Motion · Lenis · Embla · Recharts · Geist Sans + Geist Mono.
 
 ## Como rodar
 

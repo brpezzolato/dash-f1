@@ -2,9 +2,9 @@
 @import "tw-animate-css";
 
 @theme inline {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Titillium Web", "Inter Variable", ui-sans-serif, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -60,6 +60,11 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  /* Títulos com espaçamento mais justo, como pede a Geist em tamanhos grandes. */
+  .font-display {
+    letter-spacing: -0.03em;
   }
 }
 
@@ -91,5 +96,86 @@
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+  }
+}
+
+/*
+ * Animações guiadas pela rolagem (CSS scroll-driven animations): rodam no
+ * navegador, sem JavaScript a cada quadro. Onde não houver suporte, os
+ * elementos simplesmente ficam no estado final.
+ */
+@supports (animation-timeline: view()) {
+  .hero-timeline {
+    view-timeline: --hero block;
+  }
+  /* Transform e cantos em animações separadas: border-radius no mesmo
+     keyframe impediria o transform de rodar direto na GPU. */
+  .hero-shrink {
+    animation:
+      hero-shrink linear both,
+      hero-round linear both;
+    animation-timeline: --hero, --hero;
+    animation-range:
+      exit 0% exit 100%,
+      exit 0% exit 6%;
+    will-change: transform;
+  }
+  .hero-dim {
+    animation: hero-dim linear both;
+    animation-timeline: --hero;
+    animation-range: exit 0% exit 100%;
+  }
+  .scroll-text {
+    view-timeline: --statement block;
+  }
+  .scroll-word {
+    opacity: 0.12;
+    animation: word-in linear both;
+    animation-timeline: --statement;
+  }
+}
+
+@keyframes hero-shrink {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  to {
+    transform: translateY(100px) scale(0.88);
+  }
+}
+
+@keyframes hero-round {
+  from {
+    border-radius: 0;
+  }
+  to {
+    border-radius: 32px;
+  }
+}
+
+@keyframes hero-dim {
+  to {
+    opacity: 0.6;
+  }
+}
+
+@keyframes word-in {
+  from {
+    opacity: 0.12;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-shrink,
+  .hero-dim,
+  .scroll-word {
+    animation: none;
+    opacity: 1;
+  }
+  .hero-dim {
+    opacity: 0;
   }
 }

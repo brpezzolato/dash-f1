@@ -56,11 +56,8 @@ export function IntroLoader({ drivers, tracks, season }: { drivers: DriverInfo[]
         >
           {/* Grade de fundo e brilho na cor da equipe. */}
           <div className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.035)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)] bg-[size:48px_48px]" />
-          <motion.div
-            className="absolute inset-0"
-            animate={{ background: `radial-gradient(circle at 50% 45%, ${driver.team.color}55, transparent 55%)` }}
-            transition={{ duration: 0.15 }}
-          />
+          {/* Brilho trocado direto (sem interpolar gradiente na tela inteira). */}
+          <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, ${driver.team.color}55, transparent 55%)` }} />
 
           {/* Traçado da pista da vez. */}
           {track && (

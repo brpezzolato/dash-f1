@@ -50,7 +50,6 @@ function Podium({ rows }: { rows: LeaderboardRow[] }) {
             className={`relative overflow-hidden rounded-2xl ring-1 ring-white/[0.08] ${first ? "pt-4 pb-3" : "pt-3 pb-2.5"}`}
             style={{ background: `linear-gradient(180deg, ${c}40, rgb(255 255 255 / 0.02) 70%)` }}
           >
-            <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: c }} />
             <div className="flex flex-col items-start gap-2 px-3 sm:flex-row sm:items-center sm:gap-3">
               <span className="relative shrink-0 overflow-hidden rounded-full ring-2" style={{ width: first ? 52 : 42, height: first ? 52 : 42, background: c, ["--tw-ring-color" as string]: c }}>
                 <Headshot driver={r.driver} size={104} className="size-full" />

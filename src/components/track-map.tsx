@@ -44,7 +44,7 @@ export function TrackMap({ map, color = "#ffffff", corners = false, className }:
         map.corners.map((c) => (
           <g key={c.number}>
             <circle cx={c.x} cy={c.y} r="20" fill="rgb(0 0 0 / 0.65)" stroke="rgb(255 255 255 / 0.25)" strokeWidth="2" />
-            <text x={c.x} y={c.y + 7} textAnchor="middle" fontSize="20" fontWeight="600" fill="#fff" fontFamily="Inter Variable, sans-serif">
+            <text x={c.x} y={c.y + 7} textAnchor="middle" fontSize="20" fontWeight="600" fill="#fff" style={{ fontFamily: "var(--font-geist-mono)" }}>
               {c.number}
             </text>
           </g>
