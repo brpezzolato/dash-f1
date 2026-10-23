@@ -13,6 +13,15 @@ Dashboard de **ciência de dados da Fórmula 1** em uma **página única**, com 
 
 O seletor de temporada vai de 2000 até hoje, via `?season=AAAA`. Pneus, voltas e clima existem a partir de 2023.
 
+## Rede de 3 computadores
+
+Na atividade, os dados chegam ao dashboard pela rede local:
+1. O **PC 1** coleta da API pública e publica `dados.json`.
+2. O **PC 2** busca esse arquivo e faz `POST` em `/api/receber`.
+3. O **PC 3** (este app) exibe o que recebeu.
+
+O passo a passo e os scripts estão em [`rede/`](rede/README.md).
+
 ## Fontes de dados
 
 | Fonte | Usada para | Variável |

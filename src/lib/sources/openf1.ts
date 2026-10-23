@@ -1,11 +1,9 @@
 import "server-only";
 
-import { DATA_SOURCES } from "../config";
-import { createThrottle, fetchJson } from "../http";
+import { buscar } from "./buscar";
 import type { OF1Driver, OF1Lap, OF1Meeting, OF1Session, OF1Stint, OF1Weather } from "../types";
 
-const throttle = createThrottle(350);
-const get = <T>(path: string) => throttle(() => fetchJson<T>(`${DATA_SOURCES.openf1}/${path}`));
+const get = <T>(path: string) => buscar<T>("openf1", path);
 
 export const meetings = (year: string) => get<OF1Meeting[]>(`meetings?year=${year}`);
 export const raceSessions = (year: string) => get<OF1Session[]>(`sessions?year=${year}&session_name=Race`);

@@ -1,7 +1,6 @@
 import "server-only";
 
-import { DATA_SOURCES } from "../config";
-import { fetchJson } from "../http";
+import { buscar } from "./buscar";
 import type { ConstructorStanding, DriverStanding, Race } from "../types";
 
 const PAGE = 100;
@@ -11,7 +10,7 @@ interface MR<T> {
 }
 type RaceTable = MR<{ RaceTable: { Races: Race[] } }>;
 
-const get = <T>(path: string) => fetchJson<T>(`${DATA_SOURCES.jolpica}/${path}`);
+const get = <T>(path: string) => buscar<T>("jolpica", path);
 
 export async function driverStandings(season: string): Promise<DriverStanding[]> {
   const d = await get<MR<{ StandingsTable: { StandingsLists: { DriverStandings: DriverStanding[] }[] } }>>(

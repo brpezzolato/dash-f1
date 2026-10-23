@@ -1,14 +1,11 @@
 import "server-only";
 
-import { DATA_SOURCES } from "../config";
-import { fetchJson } from "../http";
+import { buscar } from "./buscar";
 import type { MVCircuit, TrackMap } from "../types";
 
 export async function circuit(circuitKey: number, year: number): Promise<MVCircuit> {
   // A API recusa requisições sem User-Agent.
-  return fetchJson<MVCircuit>(`${DATA_SOURCES.multiviewer}/circuits/${circuitKey}/${year}`, {
-    headers: { "User-Agent": "dash-f1" },
-  });
+  return buscar<MVCircuit>("multiviewer", `circuits/${circuitKey}/${year}`, { "User-Agent": "dash-f1" });
 }
 
 /** Converte as coordenadas do traçado num caminho SVG centrado num viewBox 1000×1000. */

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # mídia baixada no build
 /public/media/
+
+# pacote recebido do PC 2 (POST /api/receber)
+/.dados/

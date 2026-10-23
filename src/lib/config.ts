@@ -14,5 +14,15 @@ export const DATA_SOURCES = {
   multiviewer: process.env.F1_MULTIVIEWER_BASE ?? "https://api.multiviewer.app/api/v1",
 };
 
+/**
+ * De onde vêm os dados:
+ * - "rede"    → só do pacote recebido do PC 2 em POST /api/receber;
+ * - "publica" → direto das APIs públicas (como antes);
+ * - "auto"    → do pacote recebido, se houver; senão, das APIs públicas.
+ * Padrão: "rede" nos computadores do laboratório; "publica" na Vercel, que não
+ * tem disco gravável persistente para guardar o pacote recebido.
+ */
+export const FONTE = (process.env.F1_FONTE ?? (process.env.VERCEL ? "publica" : "rede")) as "rede" | "publica" | "auto";
+
 /** Por quanto tempo (s) as respostas ficam em cache no servidor. */
 export const REVALIDATE_SECONDS = Number(process.env.F1_REVALIDATE_SECONDS ?? 1800);

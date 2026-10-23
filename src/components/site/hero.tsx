@@ -10,6 +10,7 @@ import { SeasonSelect } from "@/components/season-select";
 import type { CircuitInfo, DriverInfo, LeaderboardRow, WeatherSummary } from "@/lib/types";
 import { LiveTrack, type TrackCar } from "./live-track";
 import { RaceBoard } from "./race-board";
+import { RedeStatus, type RedeInfo } from "./rede-status";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -26,6 +27,8 @@ export interface HeroData {
   circuit?: CircuitInfo;
   weather?: WeatherSummary;
   focus?: { driver: DriverInfo; label: string };
+  /** Presente quando os dados vieram do PC 2 pela rede. */
+  rede?: RedeInfo;
 }
 
 /* ------------------------------------------------------------ fundo */
@@ -166,6 +169,7 @@ export function Hero({ data }: { data: HeroData }) {
               className="flex flex-wrap items-center gap-2 font-mono text-[11px] tracking-[0.25em] text-white/55 uppercase"
             >
               <SeasonSelect season={data.season} seasons={data.seasons} />
+              {data.rede && <RedeStatus info={data.rede} />}
               <span className="text-f1">●</span> Última corrida <span className="text-white/25">{"//"}</span> R{data.round ?? "–"}
               {data.raceDate && (
                 <>

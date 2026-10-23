@@ -4,6 +4,8 @@ import { CIRCUITS } from "./circuits";
 import { flagFor } from "./flags";
 import { seasonStats } from "./stats";
 import { optional } from "./http";
+import { lerPacote } from "./pacote";
+import { usandoPacote } from "./sources/buscar";
 import * as jolpica from "./sources/jolpica";
 import * as mv from "./sources/multiviewer";
 import * as openf1 from "./sources/openf1";
@@ -35,6 +37,11 @@ export const FIRST_SEASON = 2000;
 export const FIRST_TELEMETRY_SEASON = 2023;
 
 export function seasons(): string[] {
+  // Com dados vindos da rede, só existe a temporada que veio no pacote.
+  if (usandoPacote()) {
+    const recebido = lerPacote();
+    return recebido ? [recebido.pacote.temporada] : [String(new Date().getFullYear())];
+  }
   const current = new Date().getFullYear();
   return Array.from({ length: current - FIRST_SEASON + 1 }, (_, i) => String(current - i));
 }

@@ -6,6 +6,83 @@ Os nomes, as maiúsculas e minúsculas e o aninhamento dos campos precisam ser e
 
 ---
 
+## 0. Pacote da rede (`dados.json`)
+
+Na arquitetura de 3 PCs (veja [`rede/README.md`](../rede/README.md)), o caminho dos dados é este:
+1. O **PC 1** faz todas as requisições das seções 2 a 4 e junta as respostas em um único arquivo, `public/dados.json`.
+2. O **PC 2** busca esse arquivo e o envia ao **PC 3**.
+3. O **PC 3** monta o dashboard **somente** com ele.
+
+### 0.1 `GET http://172.16.29.68:3000/dados.json` (PC 1 → PC 2)
+
+```json
+{
+  "formato": "dash-f1/pacote@1",
+  "temporada": "string AAAA",
+  "geradoEm": "string ISO 8601",
+  "origem": "string (opcional)",
+  "respostas": {
+    "jolpica/{ano}/driverstandings.json": "objeto da seção 2.1",
+    "jolpica/{ano}/constructorstandings.json": "objeto da seção 2.2",
+    "jolpica/{ano}.json?limit=100": "objeto da seção 2.3",
+    "jolpica/{ano}/last/results.json": "objeto da seção 2.4",
+    "jolpica/{ano}/results.json?limit=100&offset=0": "objeto da seção 2.5",
+    "jolpica/{ano}/results.json?limit=100&offset=100": "objeto da seção 2.5 (uma chave por página)",
+    "jolpica/{ano}/sprint.json?limit=100&offset=0": "objeto da seção 2.6",
+    "openf1/sessions?year={ano}&session_name=Race": "lista da seção 3.1",
+    "openf1/meetings?year={ano}": "lista da seção 3.2",
+    "openf1/meetings?year={ano-1}": "lista da seção 3.2",
+    "openf1/drivers?session_key={session_key}": "lista da seção 3.3",
+    "openf1/weather?session_key={session_key}": "lista da seção 3.4",
+    "openf1/stints?session_key={session_key}": "lista da seção 3.5",
+    "openf1/laps?session_key={session_key}": "lista da seção 3.6",
+    "multiviewer/circuits/{circuit_key}/{ano}": "objeto da seção 4.1 (uma chave por circuito)"
+  }
+}
+```
+
+**Regras do pacote:**
+- Cada chave de `respostas` é `"<fonte>/<caminho da requisição>"`, exatamente como nas seções 2 a 4, sem a URL base.
+- O valor é o JSON que a API devolveu, sem nenhuma alteração.
+- `formato` precisa ser exatamente `"dash-f1/pacote@1"`, e `temporada` precisa ser um ano com 4 dígitos.
+- O pacote precisa ter pelo menos uma resposta `jolpica/…`.
+- Uma chave ausente faz só a parte do dashboard que depende dela aparecer como "indisponível". A exceção são as chaves de 2.1 a 2.5: sem elas, a página mostra a tela de erro.
+
+### 0.2 `POST http://<IP_DO_PC3>:3000/api/receber` (PC 2 → PC 3)
+
+**Requisição:**
+- Cabeçalho `Content-Type: application/json`.
+- Cabeçalho `X-Origem` opcional, com a identificação de quem envia.
+- Corpo: o pacote de 0.1, sem alteração.
+
+Respostas possíveis:
+
+| Status | Quando | Corpo |
+| --- | --- | --- |
+| `201 Created` | pacote aceito | `{ "ok": true, "temporada": "string", "recebidoEm": "string ISO 8601", "remetente": "string", "bytes": 0, "respostas": 0 }` |
+| `400 Bad Request` | corpo não é JSON | `{ "ok": false, "erro": "string" }` |
+| `413 Payload Too Large` | maior que 25 MB | `{ "ok": false, "erro": "string" }` |
+| `422 Unprocessable Entity` | JSON fora do formato de 0.1 | `{ "ok": false, "erro": "string" }` |
+
+### 0.3 `GET http://<IP_DO_PC3>:3000/api/receber` (status)
+
+```json
+{
+  "recebido": true,
+  "temporada": "string",
+  "geradoEm": "string ISO 8601",
+  "origem": "string",
+  "recebidoEm": "string ISO 8601",
+  "remetente": "string",
+  "bytes": 0,
+  "respostas": 0
+}
+```
+
+Antes do primeiro envio, a resposta é só `{ "recebido": false }`.
+
+---
+
 ## 1. Como os dados trafegam
 
 ```
@@ -15,6 +92,7 @@ Navegador  ──HTTP──▶  Servidor Next.js (Vercel)  ──HTTP──▶  
 ```
 
 - O **navegador nunca fala direto com as APIs de dados**. Quem faz as requisições é o servidor Next.js, que funciona como mediador.
+- Na arquitetura de 3 PCs, quem faz essas requisições é o script do PC 1. O PC 3 lê as respostas do pacote recebido (seção 0), sem acessar a internet para buscar dados.
 - O servidor guarda cada resposta em cache por **1800 s**, configurável em `F1_REVALIDATE_SECONDS`.
 - Todas as requisições são `GET`, com o cabeçalho `Accept: application/json` e timeout de **12 s**.
 - As chamadas ao OpenF1 saem uma de cada vez, com pelo menos **350 ms** entre elas, por causa do limite de uso da API.

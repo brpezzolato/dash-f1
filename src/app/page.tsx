@@ -13,9 +13,19 @@ import { IntroLoader } from "@/components/site/intro-loader";
 import { Ranking } from "@/components/site/ranking";
 import { ScrollText } from "@/components/site/scroll-text";
 import { SmoothScroll } from "@/components/site/smooth-scroll";
+import { Aguardando } from "@/components/site/aguardando";
 import { FIRST_TELEMETRY_SEASON, getDashboard, resolveSeason, seasons } from "@/lib/f1";
+import { lerPacote } from "@/lib/pacote";
+import { usandoPacote } from "@/lib/sources/buscar";
+
+// Os dados mudam quando o PC 2 envia um pacote novo: a página é sempre recalculada.
+export const dynamic = "force-dynamic";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
+  const rede = usandoPacote();
+  const recebido = lerPacote();
+  if (rede && !recebido) return <Aguardando />;
+
   const season = resolveSeason((await searchParams).season);
   const d = await getDashboard(season);
   const race = d.lastRace;
@@ -56,6 +66,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           circuit: race?.circuit ?? d.nextCircuit,
           weather: race?.weather,
           focus: winner ? { driver: winner.driver, label: "Vencedor" } : d.leader ? { driver: d.leader, label: "Líder" } : undefined,
+          rede:
+            rede && recebido
+              ? { ...recebido.recebimento, geradoEm: recebido.pacote.geradoEm, origem: recebido.pacote.origem }
+              : undefined,
         }}
       />
 
